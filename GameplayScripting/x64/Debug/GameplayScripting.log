@@ -1,0 +1,15 @@
+﻿  Balloon.cpp
+C:\Dev\Prog 2\Balloon pop\GameplayScripting\Balloon.cpp(22,27): warning C4305: 'argument': truncation from 'double' to 'float'
+  Game.cpp
+  main.cpp
+  pch.cpp
+  GameplayScripting.vcxproj -> C:\Dev\Prog 2\Balloon pop\x64\Debug\GameplayScripting.exe
+  C:\Dev\Prog 2\Balloon pop\Libraries\SDLMain\SDL2-2.26.3\lib\x64\SDL2.dll
+  1 File(s) copied
+  C:\Dev\Prog 2\Balloon pop\Libraries\SDLImage\SDL2_image-2.6.3\lib\x64\SDL2_image.dll
+  1 File(s) copied
+  C:\Dev\Prog 2\Balloon pop\Libraries\SDLMixer\SDL2_mixer-2.6.3\lib\x64\SDL2_mixer.dll
+  1 File(s) copied
+  C:\Dev\Prog 2\Balloon pop\Libraries\SDLTtf\SDL2_ttf-2.20.2\lib\x64\SDL2_ttf.dll
+  1 File(s) copied
+  0 File(s) copied

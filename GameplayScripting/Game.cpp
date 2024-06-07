@@ -14,14 +14,45 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-
+	m_FontPath = TTF_OpenFont("Font.ttf", 100);
+	m_FontSmaller = TTF_OpenFont("Font.ttf", 20);
 	m_BalloonPtr = new Balloon(GetViewPort());
+	m_CurrentPlayerPtr = new Text("Current Player: 1", Color4f{ 1, 1, 1, 1 }, m_FontPath);
+
+	m_ControlsPtr = new Text("Controls:", Color4f{ 1, 1, 1, 0.5 }, m_FontSmaller);
+	m_ZPtr = new Text("Z: End turn", Color4f{ 1, 1, 1, 0.5 }, m_FontSmaller);
+	m_SPtr = new Text("S: Place spike", Color4f{ 1, 1, 1, 0.5 }, m_FontSmaller);
+	m_RPtr = new Text("Spacebar: Inflate", Color4f{ 1, 1, 1, 0.5 }, m_FontSmaller);
+	m_SpacePtr = new Text("R:Restart", Color4f{ 1, 1, 1, 0.5 }, m_FontSmaller);
+	m_SpikesEarnedPtr = new Text("Spikes earned", Color4f{ 1,1,1, 0.5 }, m_FontSmaller);
+
 }
 
 void Game::Cleanup( )
 {
 	delete m_BalloonPtr;
 	m_BalloonPtr = nullptr;
+
+	delete m_CurrentPlayerPtr;
+	m_CurrentPlayerPtr = nullptr;
+
+	delete m_ControlsPtr;
+	m_ControlsPtr = nullptr;
+	
+	delete m_ZPtr;
+	m_ZPtr = nullptr;
+
+	delete m_RPtr;
+	m_RPtr = nullptr;
+
+	delete m_SPtr;
+	m_SPtr = nullptr;
+
+	delete m_SpacePtr;
+	m_SpacePtr = nullptr;
+
+	delete m_SpikesEarnedPtr;
+	m_SpikesEarnedPtr = nullptr;
 }
 
 void Game::Update( float elapsedSec )
@@ -29,6 +60,8 @@ void Game::Update( float elapsedSec )
 	const bool inflate{ bool(m_KeyStateArrPtr[SDL_SCANCODE_SPACE]) };
 	const bool restart{ bool(m_KeyStateArrPtr[SDL_SCANCODE_R]) };
 	const bool endTurn{ bool(m_KeyStateArrPtr[SDL_SCANCODE_W]) };
+	const bool placeSpike{ bool(m_KeyStateArrPtr[SDL_SCANCODE_S]) };
+
 
 
 	if (restart && m_BalloonPtr->GetExploded())
@@ -42,6 +75,12 @@ void Game::Update( float elapsedSec )
 			m_PlayerOne = !m_PlayerOne;
 		}
 		m_TimePressed = 0;
+		m_BalloonPtr->SetAmountInflated(0.0f);
+		m_PlayerOneHasSpikes = false;
+		m_PlayerTwoHasSpikes = false;
+		m_SpikesPlaced = false;
+		m_SpikesEarned = false;
+		m_BalloonPtr->SetIsSpiked(false);
 	}
 
 	m_BalloonPtr->Update(elapsedSec);
@@ -58,6 +97,35 @@ void Game::Update( float elapsedSec )
 
 	if (endTurn && m_TimePressed > 0)
 	{
+		m_BalloonPtr->SetIsSpiked(m_SpikesPlaced);
+		m_BalloonPtr->UpdateSpikePos();
+
+		if (m_PlayerOne && m_SpikesPlaced)
+		{
+			m_PlayerOneHasSpikes = false;
+		}
+
+		if (!m_PlayerOne && m_SpikesPlaced)
+		{
+			m_PlayerTwoHasSpikes = false;
+		}
+		if (m_SpikesEarned)
+		{
+			if (m_PlayerOne)
+			{
+				m_PlayerOneHasSpikes = true;
+			}
+			else
+			{
+				m_PlayerTwoHasSpikes = true;
+			}
+		}
+
+		m_BalloonPtr->SetAmountInflated(0.0f);
+		m_SpikesEarned = false;
+		m_SpikesPlaced = false;
+
+
 		m_PlayerOne = !m_PlayerOne;
 		m_TimePressed = 0;
 
@@ -83,7 +151,11 @@ void Game::Update( float elapsedSec )
 		}
 		m_BalloonPtr->SetWeather(newWeather);
 	}
-
+	std::cout << m_BalloonPtr->GetAmountInflated();
+	if (m_BalloonPtr->GetAmountInflated() >= 8000 * elapsedSec)
+	{
+		m_SpikesEarned = true;
+	}
 	// Check keyboard state
 	//const Uint8 *pStates = SDL_GetKeyboardState( nullptr );
 	//if ( pStates[SDL_SCANCODE_RIGHT] )
@@ -94,6 +166,15 @@ void Game::Update( float elapsedSec )
 	//{
 	//	std::cout << "Left and up arrow keys are down\n";
 	//}
+
+	if (placeSpike && m_PlayerOne && m_PlayerOneHasSpikes)
+	{
+		m_SpikesPlaced = true;
+	}
+	else if (placeSpike && !m_PlayerOne && m_PlayerTwoHasSpikes)
+	{
+		m_SpikesPlaced = true;
+	}
 }
 
 void Game::Draw( ) const
@@ -111,6 +192,18 @@ void Game::Draw( ) const
 	}
 
 	m_BalloonPtr->Draw();
+	DrawCurrentPlayer();
+	m_ControlsPtr->Draw(Point2f{ 120, GetViewPort().height / 2 });
+	m_ZPtr->Draw(Point2f{ 120, (GetViewPort().height / 2) - 30 });
+	m_RPtr->Draw(Point2f{ 120, (GetViewPort().height / 2) - 60 });
+	m_SpacePtr->Draw(Point2f{ 120, (GetViewPort().height / 2) - 90 });
+	m_SPtr->Draw(Point2f{ 120, (GetViewPort().height / 2) - 120 });
+
+	if (m_SpikesEarned)
+	{
+		m_SpikesEarnedPtr->Draw(Point2f{ GetViewPort().width / 2, GetViewPort().height / 2 - 60 });
+	}
+
 }
 
 void Game::ProcessKeyDownEvent( const SDL_KeyboardEvent & e )
@@ -196,4 +289,53 @@ void Game::ClearBackground( ) const
 		break;
 	}
 	glClear( GL_COLOR_BUFFER_BIT );
+}
+
+void Game::DrawCurrentPlayer() const
+{
+	if (m_PlayerOne)
+	{
+		if(!m_BalloonPtr->GetExploded())
+		{
+			m_CurrentPlayerPtr->ChangeText("Current Player: One");
+			m_CurrentPlayerPtr->Draw(Point2f{ GetViewPort().width / 2 , GetViewPort().height - m_CurrentPlayerPtr->GetTexture()->GetHeight() });
+		}
+		else
+		{
+			m_CurrentPlayerPtr->ChangeText("Player Two Won");
+			m_CurrentPlayerPtr->Draw(Point2f{ GetViewPort().width / 2 , GetViewPort().height - m_CurrentPlayerPtr->GetTexture()->GetHeight() });
+		}
+
+		if (m_PlayerOneHasSpikes)
+		{
+
+			utils::SetColor(Color4f{ 0.3 ,0.3,0.3,1 });
+			utils::FillTriangle(Point2f{1300 , 870}, Point2f{ 1350 ,870 }, Point2f{ 1325 , 935 });
+		}
+	}
+	else
+	{
+		if (!m_BalloonPtr->GetExploded())
+		{
+			m_CurrentPlayerPtr->ChangeText("Current Player: Two");
+			m_CurrentPlayerPtr->Draw(Point2f{ GetViewPort().width / 2 , GetViewPort().height - m_CurrentPlayerPtr->GetTexture()->GetHeight() });
+		}
+		else
+		{
+			m_CurrentPlayerPtr->ChangeText("Player One Won");
+			m_CurrentPlayerPtr->Draw(Point2f{ GetViewPort().width / 2 , GetViewPort().height - m_CurrentPlayerPtr->GetTexture()->GetHeight() });
+		}
+
+
+		if (m_PlayerTwoHasSpikes)
+		{
+
+			utils::SetColor(Color4f{ 0.3 ,0.3,0.3,1 });
+			utils::FillTriangle(Point2f{ 1300 , 870 }, Point2f{ 1350 ,870 }, Point2f{ 1325 , 935 });
+		}
+	}
+}
+void Game::SpikesEarnedText()
+{
+
 }

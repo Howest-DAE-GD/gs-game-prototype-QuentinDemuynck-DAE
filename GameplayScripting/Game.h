@@ -1,6 +1,8 @@
 #pragma once
 #include "BaseGame.h"
 #include "Balloon.h"
+#include "Text.h"
+#include "vector"
 class Game : public BaseGame
 {
 public:
@@ -25,6 +27,23 @@ public:
 private:
 
 	Balloon* m_BalloonPtr;
+	Text* m_CurrentPlayerPtr;
+	TTF_Font* m_FontPath;
+	TTF_Font* m_FontSmaller;
+
+	Text* m_ControlsPtr;
+	Text* m_RPtr;
+	Text* m_ZPtr;
+	Text* m_SpacePtr;
+	Text* m_SpikesEarnedPtr;
+	Text* m_SPtr;
+
+	bool m_PlayerOneHasSpikes{ false };
+	bool m_PlayerTwoHasSpikes{ false };
+	bool m_SpikesPlaced{ false };
+	bool m_SpikesEarned{ false };
+
+
 	const Uint8* m_KeyStateArrPtr{ SDL_GetKeyboardState(nullptr) };
 
 	bool m_PlayerOne{false};
@@ -34,4 +53,7 @@ private:
 	void Initialize();
 	void Cleanup( );
 	void ClearBackground( ) const;
+
+	void DrawCurrentPlayer() const;
+	void SpikesEarnedText();
 };
